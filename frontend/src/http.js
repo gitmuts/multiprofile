@@ -7,6 +7,7 @@ const instance = axios.create({
 })
 
 instance.interceptors.request.use(function (config) {
+  console.log(store.state.session)
   const token = window.localStorage.getItem('token')
   const tokenUrls = ['/token', 'logout', 'register', 'contactus']
   var tokenUrl = 0

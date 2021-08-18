@@ -4,6 +4,7 @@ import com.gitmuts.multiprofile.model.*;
 import com.gitmuts.multiprofile.user.entity.Organization;
 import com.gitmuts.multiprofile.user.entity.Permission;
 import com.gitmuts.multiprofile.user.entity.User;
+import com.gitmuts.multiprofile.user.repo.UserOrganisation;
 import com.gitmuts.multiprofile.user.repo.UserRepo;
 import com.gitmuts.multiprofile.user.repo.UserSessionRepo;
 import com.gitmuts.multiprofile.security.JwtTokenUtil;
@@ -78,13 +79,18 @@ public class AuthenticationController {
                 userSessionRepo.save(userSession);
             }
 
-            List<Organization> organizations = new ArrayList<>(user.getOrganizations());
+            List<Organization> organizations = new ArrayList<>(user.getUserOrganisations().stream().map(UserOrganisation::getOrganization).collect(Collectors.toList()));
             user.setSelectedOrganization(organizations.get(0));
             String token = jwtTokenUtil.generateToken(user, organizations.get(0));
             List<String> permissions = user.getRole() != null ? user.getRole().getPermissions().stream().map(Permission::getAction).collect(Collectors.toList()): new ArrayList<>();
             user.setPermissions(permissions);
             userSession.setLoggedIn(1);
             userSessionRepo.save(userSession);
+
+            UserOrganisation userOrganisation = user.getUserOrganisations().stream().filter(userOrg -> userOrg.getOrganization().equals(organizations.get(0))).findFirst().get();
+
+            user.setRole(userOrganisation.getRole());
+            user.setOrganizations(organizations);
 
             return new ResponseEntity(new LoginToken(user, token), HttpStatus.OK);
         } catch (AuthenticationException authe){

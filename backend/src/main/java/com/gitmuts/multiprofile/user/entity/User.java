@@ -1,9 +1,11 @@
 package com.gitmuts.multiprofile.user.entity;
 
+import com.gitmuts.multiprofile.user.repo.UserOrganisation;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.aspectj.weaver.ast.Or;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -29,9 +31,8 @@ public class User  implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name="USER_ORGANIZATION")
-    Set<Organization> organizations;
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    Set<UserOrganisation> userOrganisations;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -42,9 +43,7 @@ public class User  implements UserDetails {
 
     @Column(name = "active")
     private int active;
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="role_id")
-    private Role role;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private Timestamp createdAt;
@@ -57,6 +56,11 @@ public class User  implements UserDetails {
     List<String> permissions = new ArrayList<>();
     @Transient
     Organization selectedOrganization;
+    @Transient
+    List<Organization> organizations;
+
+    @Transient
+    Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

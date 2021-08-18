@@ -6,6 +6,7 @@ import com.gitmuts.multiprofile.user.entity.Organization;
 import com.gitmuts.multiprofile.user.entity.Permission;
 import com.gitmuts.multiprofile.user.entity.User;
 import com.gitmuts.multiprofile.user.model.LoginToken;
+import com.gitmuts.multiprofile.user.repo.UserOrganisation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.persistence.FetchType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,9 +37,11 @@ public class SwitchAccountController {
 
             User user = (User) userDetails;
 
-            log.info("User org list size {}", user.getOrganizations().size());
+            List<Organization> organizations = new ArrayList<>(user.getUserOrganisations().stream().map(UserOrganisation::getOrganization).collect(Collectors.toList()));
 
-            List<Long> orgIds = user.getOrganizations().stream().map(Organization::getId).collect(Collectors.toList());
+            log.info("User org list size {}", organizations.size());
+
+            List<Long> orgIds = organizations.stream().map(Organization::getId).collect(Collectors.toList());
 
 
             if(orgIds.contains(organization.getId())){
@@ -51,6 +55,10 @@ public class SwitchAccountController {
             List<String> permissions = user.getRole() != null ? user.getRole().getPermissions().stream().map(Permission::getAction).collect(Collectors.toList()): new ArrayList<>();
             user.setPermissions(permissions);
             user.setSelectedOrganization(organization);
+
+            UserOrganisation userOrganisation = user.getUserOrganisations().stream().filter(userOrg -> userOrg.getOrganization().getId() == organization.getId()).findFirst().get();
+            user.setRole(userOrganisation.getRole());
+            user.setOrganizations(organizations);
 
             return new ResponseEntity(new LoginToken(user, token), HttpStatus.OK);
         } catch (Exception e){
